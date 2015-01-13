@@ -23,24 +23,43 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
+var checkUser = function () {
+  // do authentication
+  //
+  return false;
+};
+
+
+app.get('/',
 function(req, res) {
-  res.render('index');
+  if (checkUser()) {
+    res.render('index');
+  } else {
+    res.redirect('login');
+  }
 });
 
-app.get('/create', 
+app.get('/create',
 function(req, res) {
-  res.render('index');
+  if (checkUser()) {
+    res.render('index');
+  } else {
+    res.redirect('login');
+  }
 });
 
-app.get('/links', 
+app.get('/links',
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if (checkUser()) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('login');
+  }
 });
 
-app.post('/links', 
+app.post('/links',
 function(req, res) {
   var uri = req.body.url;
 
@@ -78,6 +97,45 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login',
+function(req, res) {
+  res.render('login');
+});
+
+app.get('/signup',
+function(req, res) {
+  res.render('signup');
+});
+
+app.post('/signup',
+function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({username: username}).fetch().then(function(found) {
+    if(found) {
+      console.log ('user already taken')
+      // res.redirect('/signup');
+      res.send(200, 'Username taken, choose another username');
+    } else {
+
+      var user = new User({username: username});
+
+      console.log(username, password);
+      user.save().then(function(newUser) {
+        Users.add(newUser);
+        res.send(200, newUser);
+        console.log(newUser);
+      // user.Create( username, password);
+      });
+    }
+  });
+});
+
+app.post('/login',
+function(req, res) {
+  User.login(req.body.username, req.body.password);
+  // make new session
+});
 
 
 /************************************************************/
