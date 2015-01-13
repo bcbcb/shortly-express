@@ -113,19 +113,21 @@ function(req, res) {
   var password = req.body.password;
   new User({username: username}).fetch().then(function(found) {
     if(found) {
-      console.log ('user already taken')
+      console.log ('user already taken');
       // res.redirect('/signup');
       res.send(200, 'Username taken, choose another username');
     } else {
 
-      var user = new User({username: username});
+      User.hashPassword( password, function (hash) {
+        var user = new User( {username: username, hashed_password: hash} );
 
-      console.log(username, password);
-      user.save().then(function(newUser) {
-        Users.add(newUser);
-        res.send(200, newUser);
-        console.log(newUser);
-      // user.Create( username, password);
+        console.log( user.get('username'), user.get('password') );
+        user.save().then(function(newUser) {
+          Users.add(newUser);
+          res.send(200, newUser);
+          console.log(newUser);
+        });
+
       });
     }
   });

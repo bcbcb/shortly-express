@@ -8,9 +8,32 @@ var User = db.Model.extend({
   hasTimestamps: true,
   links: function(){
     return this.hasMany(Link);
+  },
+
+  initialize: function() {
+    console.log('initialize');
+    // if (!username || !password) throw new Error('Username and password are both required');
+    // console.log(username, password, '!');
+    // this.on('creating', function (model, attrs, options) {
+    //   bcrypt.genSalt(10, function(err, salt) {
+    //     bcrypt.hash(password, salt, null, function(err, hash) {
+    //       model.set('hashed_password', hash);
+    //       console.log( model.get('username'), model.get('hashed_password') );
+    //     });
+      // });
+
+    // });
   }
 
 }, {
+
+  hashPassword: function (password, cb) {
+    bcrypt.genSalt(10, function(err, salt) {
+        bcrypt.hash(password, salt, null, function(err, hash) {
+          cb(hash);
+        });
+      });
+  },
 
   login: function (username, password) {
     //check if client provided both username & password
@@ -26,22 +49,7 @@ var User = db.Model.extend({
       // if hash matches database, they they are logged in
       // redirect to wherever they go
       });
-  },
-
-  create: function(username, password) {
-    if (!username || !password) throw new Error('Username and password are both required');
-    this.on('creating', function (model, attrs, options) {
-      bcrypt.genSalt(10, function(err, salt) {
-        bcrypt.hash(password, salt, function(err, hash) {
-          model.set('hashed_password', hash);
-          console.log( model.get('username'), model.get('hashed_password') );
-        });
-      });
-
-    });
   }
-
-
 });
 
 module.exports = User;
