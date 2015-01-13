@@ -2,6 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -22,17 +23,25 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true
+}));
 
-var checkUser = function () {
-  // do authentication
-  //
+var checkUser = function (req, res) {
+  console.log('SESSION: ', req.session);
+  //check validity of session
+  if (req.session.token === '321') {
+    return true;
+  }
   return false;
 };
 
 
 app.get('/',
 function(req, res) {
-  if (checkUser()) {
+  if (checkUser(req, res)) {
     res.render('index');
   } else {
     res.redirect('login');
@@ -41,7 +50,7 @@ function(req, res) {
 
 app.get('/create',
 function(req, res) {
-  if (checkUser()) {
+  if (checkUser(req, res)) {
     res.render('index');
   } else {
     res.redirect('login');
@@ -50,7 +59,7 @@ function(req, res) {
 
 app.get('/links',
 function(req, res) {
-  if (checkUser()) {
+  if (checkUser(req, res)) {
     Links.reset().fetch().then(function(links) {
       res.send(200, links.models);
     });
@@ -119,12 +128,12 @@ function(req, res) {
     } else {
 
       User.hashPassword( password, function (hash) {
-        var user = new User( {username: username, hashed_password: hash} );
+        var user = new User( {username: username, password: hash} );
 
         console.log( user.get('username'), user.get('password') );
-        user.save().then(function(newUser) {
+        user.save().then(function (newUser) {
           Users.add(newUser);
-          res.send(200, newUser);
+          res.redirect('/');
           console.log(newUser);
         });
 
@@ -135,7 +144,10 @@ function(req, res) {
 
 app.post('/login',
 function(req, res) {
-  User.login(req.body.username, req.body.password);
+  User.login(req, res, function (res) {
+    console.log('headers = ',res.headers)
+    res.redirect('/');
+  });
   // make new session
 });
 
