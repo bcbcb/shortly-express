@@ -1,7 +1,8 @@
 body {
-  margin: 0;
+  max-width: 60%;
+  margin: 20px auto;
   margin-top: 10px;
-  font-family: arial, sans-serif;
+  font-family: Helvetica, arial, sans-serif;
 }
 
 a {
@@ -13,6 +14,13 @@ a {
 h1 {
   font-style: italic;
   margin-bottom: 10px;
+  letter-spacing: -0.1em;
+  font-size: 10em;
+  margin-top: 10px;
+  text-transform: uppercase;
+  text-align: center;
+  color: #f90;
+  font-family: Chalkduster;
 }
 
 .navigation {
@@ -55,6 +63,11 @@ h1 {
 #container {
   clear: both;
   margin-top: 10px;
+  transition: 2s;
+}
+
+#container:hover{
+
 }
 
 .link {
@@ -62,10 +75,13 @@ h1 {
   margin-bottom: 5px;
   padding: 5px;
   min-height: 50px;
+  transition: 2s;
 }
 
 .link:hover {
   background-color: #efe;
+  letter-spacing: 0.05em;
+  transition: 0.5s;
 }
 
 .link img {
