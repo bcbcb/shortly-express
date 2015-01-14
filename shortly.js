@@ -1,10 +1,10 @@
 var express = require('express');
-var util = require('./lib/utility');
 var partials = require('express-partials');
-var bodyParser = require('body-parser');
 var session = require('express-session');
+var bodyParser = require('body-parser');
 
 
+var util = require('./lib/utility');
 var db = require('./app/config');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
@@ -17,9 +17,7 @@ var app = express();
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 app.use(partials());
-// Parse JSON (uniform resource locators)
 app.use(bodyParser.json());
-// Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
@@ -29,52 +27,37 @@ app.use(session({
   saveUninitialized: true
 }));
 
-var checkUser = function (req, res) {
-  console.log('SESSION: ', req.session);
-  //check validity of session
-  if (req.session.token === '321') {
-    return true;
+var checkUser = function (req, res, next) {
+  if (req.session && req.session.token) {
+    next();
+  } else {
+    res.redirect('/login');
   }
-  return false;
 };
 
 
-app.get('/',
-function(req, res) {
-  if (checkUser(req, res)) {
-    res.render('index');
-  } else {
-    res.redirect('login');
-  }
+app.get('/', checkUser, function(req, res) {
+  res.render('index');
 });
 
-app.get('/create',
-function(req, res) {
-  if (checkUser(req, res)) {
-    res.render('index');
-  } else {
-    res.redirect('login');
-  }
+app.get('/create', checkUser, function(req, res) {
+  res.render('index');
 });
 
-app.get('/links',
-function(req, res) {
-  if (checkUser(req, res)) {
-    Links.reset().fetch().then(function(links) {
+app.get('/links', checkUser, function(req, res) {
+  Links.reset()
+    .query('where', 'user_id', '=', req.session.user)
+    .fetch()
+    .then(function (links) {
       res.send(200, links.models);
     });
-  } else {
-    res.redirect('login');
-  }
 });
 
-app.post('/links',
-function(req, res) {
+app.post('/links', checkUser, function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
-    return res.send(404);
+    return res.send(404, 'Not a valid URL: ' + uri);
   }
 
   new Link({ url: uri }).fetch().then(function(found) {
@@ -90,7 +73,8 @@ function(req, res) {
         var link = new Link({
           url: uri,
           title: title,
-          base_url: req.headers.origin
+          base_url: req.headers.origin,
+          user_id: req.session.user
         });
 
         link.save().then(function(newLink) {
@@ -102,53 +86,46 @@ function(req, res) {
   });
 });
 
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
 
-app.get('/login',
-function(req, res) {
+app.get('/login', function(req, res) {
   res.render('login');
 });
 
-app.get('/signup',
-function(req, res) {
+app.get('/signup', function(req, res) {
   res.render('signup');
 });
 
-app.post('/signup',
-function(req, res) {
+app.post('/signup', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
-  new User({username: username}).fetch().then(function(found) {
-    if(found) {
-      console.log ('user already taken');
-      // res.redirect('/signup');
-      res.send(200, 'Username taken, choose another username');
-    } else {
-
-      User.hashPassword( password, function (hash) {
-        var user = new User( {username: username, password: hash} );
-
-        console.log( user.get('username'), user.get('password') );
-        user.save().then(function (newUser) {
-          Users.add(newUser);
-          res.redirect('/');
-          console.log(newUser);
+  new User({ username: username }).fetch()
+    .then(function (found) {
+      if (found) {
+        res.send(200, 'Username taken, choose another username');
+      } else {
+        User.hashPassword( password, function (hash) {
+          var user = new User( {username: username, password: hash} );
+          user.save()
+            .then(function (newUser) {
+            Users.add(newUser);
+            res.redirect('/');
+          });
         });
-
-      });
-    }
-  });
+      }
+    });
 });
 
-app.post('/login',
-function(req, res) {
-  User.login(req, res, function (res) {
-    console.log('headers = ',res.headers)
-    res.redirect('/');
-  });
-  // make new session
+app.post('/login', function (req, res) {
+  User.login(req, res);
+});
+
+app.post('/logout', function (req, res) {
+  req.session.destroy();
+  res.redirect('/');
 });
 
 
@@ -158,7 +135,7 @@ function(req, res) {
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
 
-app.get('/*', function(req, res) {
+app.get('/*', function (req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
       res.redirect('/');
