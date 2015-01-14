@@ -151,3 +151,9 @@ form input[type=text], form input[type=password] {
 .creator .message {
   clear: both;
 }
+
+.arrow {
+  font-size: 45px;
+  float:left;
+  color: #666;
+}

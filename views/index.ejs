@@ -5,7 +5,7 @@
     <li><a href='#' class='create'>Shorten</a></li>
     <li>
       <form action="logout" method="POST">
-        <input class="logout" type='submit' name='param1' value='Logout' />
+        <input class="logout" type='submit' name='logout' value='Logout' />
       </form>
     </li>
   </ul>
@@ -15,7 +15,7 @@
 
 
 <script id='link' type='text/x-handlebars-template'>
-  <img src='/redirect_icon.png'/>
+  <span class="arrow">&#10156;</span>
   <div class='info'>
     <div class='visits'><span class='count'>{{visits}}</span>Visits</div>
     <div class='title'>{{title}}</div>
